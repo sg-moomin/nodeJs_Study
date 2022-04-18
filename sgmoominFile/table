@@ -1,0 +1,42 @@
+<html>
+<head>
+<style>
+table {
+  font-family : courier,
+  border-collapse : collapse;
+  width : 100%;
+}
+
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+  background-color: #dddddd;
+}
+</style>
+</head>
+<body>
+
+<h3> sg-moomin table </h3>
+<table style="width:100%">
+  <tr>
+    <th>이름</th>
+    <th>나이</th>
+    <th>성별</th>
+    <th>블로그</th>
+    <th>기타</th>
+  </tr>
+  <tr>
+    <td>sg-moomin</td>
+    <td>27</td>
+    <td>남자</td>
+    <td>blog.naver.com/rooney9325</td>
+    <td>sg-moomin 화이팅</td>
+  </tr>
+</tr>
+</table>
+</body>
+</html>

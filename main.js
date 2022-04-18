@@ -3,7 +3,7 @@ var fs = require('fs');
 var url = require('url');
 var qs = require('querystring');
 
-function templateList(title, list, body){
+function templateList(title, list, body, create){
   return`
   <!doctype html>
   <head>
@@ -30,7 +30,7 @@ function templateList(title, list, body){
   <body>
     <h1><a href="/">Sg-moomin</a></h1>
     ${list}
-    <a href="/form">Sg-moomin Create Text</a>
+    ${create}
     ${body}
     </body>
     </html>`
@@ -41,7 +41,7 @@ function fileReadlist(filelist){
   var list = `<ul>`;
   var i;
   for(i = 0; i < filelist.length; i++){
-    list = list + `<li><a href="/?id=${filelist[i]}">  we : ${filelist[i]}</a></li>`;
+    list = list + `<li><a href="/?id=${filelist[i]}">${filelist[i]}</a></li>`;
   }
   list = list + `</ul>`;
   return list;
@@ -61,6 +61,11 @@ function responseReturn(template, response){
   response.end(template);
 }
 
+function responseErrorReturn(errCode, endCode, response){
+  response.writeHead(errCode);
+  response.end(endCode);
+}
+
 
 var app = http.createServer(function(request,response){
     var _url = request.url;
@@ -73,18 +78,21 @@ var app = http.createServer(function(request,response){
         var title = "hello";
         var descript = "welcome";
         var list = fileReadlist(filelist);
-        var template = templateList(title, list, `<h2>${title}</h2>`);
+        var template = templateList(title, list, `<h2>${title}</h2>`,
+          `<a href="/form">create</a>`);
         responseReturn(template, response);
           })
         } else {
       fs.readdir('./sgmoominFile', function(error, filelist){
         fs.readFile(`sgmoominFile/${queryData.id}`, 'utf8', function(err, description){
-          fs.readFile(`file/sgmoomin.txt`, 'utf8', function(err, descriptionText){
+          var fileUrl = "file/sgmoomin.txt";
+          fs.readFile(fileUrl, 'utf8', function(err, descriptionText){
             var title = queryData.id;
             // var description = "Hello - Sg Moomin ";
             var list = fileReadlist(filelist);
-            console.log(title);
-            var template = templateList(title, list, `<h2>${title}</h2><h2>${descriptionText}</h2>${description}`);
+            console.log("./sgmoominFile'" + title);
+            var template = templateList(title, list, `<h2>${title}</h2><h2>${descriptionText}</h2>${description}`
+            ,`<a href="/form">create</a> <a href="/update?id=${title}">update</a>`);
             responseReturn(template, response);
           });
         });
@@ -92,10 +100,11 @@ var app = http.createServer(function(request,response){
       }
     }else if(pathname === '/form'){
         fs.readdir('./form', function(error, filelist){
+          var url = "form/form.html";
           var title = "create Text";
           var list = fileReadlist(filelist);
-          fs.readFile(`form/form.html`, 'utf8', function(err, description){
-          var template = templateList(title, list, `<h2>${title}</h2><h2>${description}</h2>`);
+          fs.readFile(url, 'utf8', function(err, description){
+          var template = templateList(title, list, `<h2>${title}</h2><h2>${description}</h2>`,'');
           responseReturn(template, response);
         });
       });
@@ -110,16 +119,44 @@ var app = http.createServer(function(request,response){
           var description = post.description;
           console.log(post, title, description);
 
-          fs.writeFile(`file/${title}`, description, 'utf8', function(err){
+          fs.writeFile(`sgmoominFile/${title}`, description, 'utf8', function(err){
             response.writeHead(302, {Location : `/?id=${title}`});
             response.end();
           })
       });
-      response.writeHead(200);
-      response.end('success');
+      responseReturn("success", response);
+    } else if(pathname === '/update') {
+      fs.readdir('./update', function(error, filelist){
+        var url = "update/update.html";
+        var title = queryData.id;
+        var list = fileReadlist(filelist);
+        console.log("./update'" + title + url);
+          fs.readFile(url, 'utf8', function(err, description){
+          var template = templateList(title, list, `<h2>${title}</h2><h2>${description}</h2>`,
+          `<a href="/form">create</a> <a href="/update?id=${title}">update</a>`);
+          responseReturn(template, response);
+        });
+      });
+    } else if(pathname === '/update_form') {
+      var body = '';
+      request.on('data', function(data){
+         body = body + data;
+      });
+      request.on('end', function(){
+          var post = qs.parse(body);
+          var id = post.id;
+          var title = post.title;
+          var description = post.description;
+          fs.rename(`sgmoominFile/${id}`, `sgmoominFile/${title}`, function(error){
+            fs.writeFile(`sgmoominFile/${title}`, description, 'utf8', function(err){
+              response.writeHead(302, {Location : `/?id=${title}`});
+              response.end();
+            })
+          });
+      });
+      responseReturn("success", response);
     } else {
-      response.writeHead(404);
-      response.end('Not found');
+      responseErrorReturn(404, "Not found", response);
     }
 });
 app.listen(3000);
